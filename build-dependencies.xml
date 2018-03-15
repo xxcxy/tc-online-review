@@ -47,6 +47,28 @@
     <property name="tcwebcommon.jar" value="${shared_libdir}/${tcwebcommon.jar.name}"/>
 
     <!-- 3rd Party Dependencies  -->
+    <!-- Kafka Messaging support related dependencies  start -->
+	<property name="gson-2.8.2.jar" value="${ext_libdir}/gson-2.8.2.jar"/>
+	<property name="hk2-api-2.4.0-b25.jar" value="${ext_libdir}/hk2-api-2.4.0-b25.jar"/>
+	<property name="hk2-locator-2.4.0-b25.jar" value="${ext_libdir}/hk2-locator-2.4.0-b25.jar"/>
+	<property name="hk2-utils-2.4.0-b25.jar" value="${ext_libdir}/hk2-utils-2.4.0-b25.jar"/>
+	<property name="javassist-3.18.1-GA.jar" value="${ext_libdir}/javassist-3.18.1-GA.jar"/>
+	<property name="javax.annotation-api-1.2.jar" value="${ext_libdir}/javax.annotation-api-1.2.jar"/>
+	<property name="javax.inject-2.4.0-b25.jar" value="${ext_libdir}/javax.inject-2.4.0-b25.jar"/>
+	<property name="javax.ws.rs-api-2.0.1.jar" value="${ext_libdir}/javax.ws.rs-api-2.0.1.jar"/>
+	<property name="jersey-client-2.19.jar" value="${ext_libdir}/jersey-client-2.19.jar"/>
+	<property name="jersey-common-2.19.jar" value="${ext_libdir}/jersey-common-2.19.jar"/>
+	<property name="jersey-container-servlet-2.19.jar" value="${ext_libdir}/jersey-container-servlet-2.19.jar"/>
+	<property name="jersey-container-servlet-core-2.19.jar" value="${ext_libdir}/jersey-container-servlet-core-2.19.jar"/>
+	<property name="jersey-guava-2.19.jar" value="${ext_libdir}/jersey-guava-2.19.jar"/>
+	<property name="jersey-media-jaxb-2.19.jar" value="${ext_libdir}/jersey-media-jaxb-2.19.jar"/>
+	<property name="jersey-media-multipart-2.19.jar" value="${ext_libdir}/jersey-media-multipart-2.19.jar"/>
+	<property name="jersey-server-2.19.jar" value="${ext_libdir}/jersey-server-2.19.jar"/>
+	<property name="jsr305-2.0.1.jar" value="${ext_libdir}/jsr305-2.0.1.jar"/>
+	<property name="kafka-clients-1.0.0.jar" value="${ext_libdir}/kafka-clients-1.0.0.jar"/>
+	<property name="slf4j-jdk14-1.5.6.jar" value="${ext_libdir}/slf4j-jdk14-1.5.6.jar"/>
+	<property name="slf4j-api-1.5.6.jar" value="${ext_libdir}/slf4j-api-1.5.6.jar"/>
+	<!-- Kafka Messaging support related dependencies  end -->
     <property name="ejb3-persistence.jar" value="${ext_libdir}/ejb3-persistence.jar"/>
     <property name="ifxjdbc.jar" value="${ext_libdir}/ifxjdbc.jar"/>
     <property name="jboss-ejb3x.jar" value="${ext_libdir}/jboss/jboss-ejb3x.jar"/>
@@ -68,14 +90,14 @@
     <property name="jackson-databind.jar" value="${ext_libdir}/jackson/jackson-databind-2.1.5.jar"/>
     <property name="jackson-annotations.jar" value="${ext_libdir}/jackson/jackson-annotations-2.1.5.jar"/>
 
-    <property name="struts2-core.jar" value="${ext_libdir}/struts/struts2-core-2.5.13.jar"/>
-    <property name="struts2-json-plugin.jar" value="${ext_libdir}/struts/struts2-json-plugin-2.5.13.jar"/>
-    <property name="struts2-spring-plugin.jar" value="${ext_libdir}/struts/struts2-spring-plugin-2.5.13.jar"/>
-
+    <property name="struts2-core.jar" value="${ext_libdir}/struts/struts2-core-2.3.15.3.jar"/>
+    <property name="struts2-json-plugin.jar" value="${ext_libdir}/struts/struts2-json-plugin-2.3.15.3.jar"/>
+    <property name="struts2-spring-plugin.jar" value="${ext_libdir}/struts/struts2-spring-plugin-2.3.15.3.jar"/>
+    <property name="xwork-core.jar" value="${ext_libdir}/struts/xwork-core-2.3.15.3.jar"/>
     <!-- xwork 1 is used by jive-->
     <property name="xwork.jar" value="${ext_libdir}/struts/xwork-1.2.3.jar"/>
 
-    <property name="ognl.jar" value="${ext_libdir}/struts/ognl-3.1.15.jar"/>
+    <property name="ognl.jar" value="${ext_libdir}/ognl-3.0.6.jar"/>
     <property name="antlr.jar" value="${ext_libdir}/antlr-2.7.2.jar"/>
 
     <property name="junit.jar" value="${ext_libdir}/testing/junit-3.8.1.jar"/>
@@ -139,6 +161,28 @@
     </path>
 
     <path id="buildlibs">
+        <!-- Kafka Messaging support related libs start -->
+		<pathelement location="${gson-2.8.2.jar}"/>
+		<pathelement location="${hk2-api-2.4.0-b25.jar}"/>
+		<pathelement location="${hk2-locator-2.4.0-b25.jar}"/>
+		<pathelement location="${hk2-utils-2.4.0-b25.jar}"/>
+		<pathelement location="${javassist-3.18.1-GA.jar}"/>
+		<pathelement location="${javax.annotation-api-1.2.jar}"/>
+		<pathelement location="${javax.inject-2.4.0-b25.jar}"/>
+		<pathelement location="${javax.ws.rs-api-2.0.1.jar}"/>
+		<pathelement location="${jersey-client-2.19.jar}"/>
+		<pathelement location="${jersey-common-2.19.jar}"/>
+		<pathelement location="${jersey-container-servlet-2.19.jar}"/>
+		<pathelement location="${jersey-container-servlet-core-2.19.jar}"/>
+		<pathelement location="${jersey-guava-2.19.jar}"/>
+		<pathelement location="${jersey-media-jaxb-2.19.jar}"/>
+		<pathelement location="${jersey-media-multipart-2.19.jar}"/>
+		<pathelement location="${jersey-server-2.19.jar}"/>
+		<pathelement location="${jsr305-2.0.1.jar}"/>
+		<pathelement location="${kafka-clients-1.0.0.jar}"/>
+		<pathelement location="${slf4j-api-1.5.6.jar}"/>
+		<pathelement location="${slf4j-jdk14-1.5.6.jar}"/>
+		<!-- Kafka Messaging support related libs ends -->
         <pathelement location="${ejb3-persistence.jar}"/>
         <pathelement location="${jboss-ejb3x.jar}"/>
         <pathelement location="${jbossall-client.jar}"/>
@@ -150,6 +194,7 @@
         <pathelement location="${struts2-core.jar}"/>
         <pathelement location="${struts2-json-plugin.jar}"/>
         <pathelement location="${struts2-spring-plugin.jar}"/>
+        <pathelement location="${xwork-core.jar}"/>
         <pathelement location="${ognl.jar}"/>
         <pathelement location="${catalog.jar}"/>
         <pathelement location="${forums.jar}"/>
@@ -171,7 +216,6 @@
         <pathelement location="${aws.jar}" />
         <pathelement location="${httpclient.jar}" />
         <pathelement location="${httpcore.jar}" />
-        <pathelement location="${xerces.jar}" />
 
         <path refid="spring_libs"/>
         <path refid="poi_libs"/>
