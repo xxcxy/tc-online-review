@@ -451,7 +451,7 @@
     <dependency>
       <groupId>com.topcoder.internal</groupId>
       <artifactId>core.api</artifactId>
-      <version>4.3.0</version>
+      <version>4.3.3</version>
     </dependency>
 
     <!-- External dependencies -->
@@ -1072,6 +1072,30 @@
       <url>https://repo.maven.apache.org/maven2</url>
     </repository>
     <repository>
+      <id>tcrepo</id>
+      <url>http://tc-mvn-repo.s3-website-us-east-1.amazonaws.com/release</url>
+      <snapshots>
+        <enabled>false</enabled>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+      </releases>
+    </repository>
+    <repository>
+      <id>tcreposnap</id>
+      <url>http://tc-mvn-repo.s3-website-us-east-1.amazonaws.com/snapshot</url>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
+      <releases>
+        <enabled>false</enabled>
+        <updatePolicy>always</updatePolicy>
+      </releases>
+    </repository>
+    <repository>
       <id>temp-maven-repo</id>
       <url>https://github.com/coderReview/temp-maven-repo/raw/master</url>
       <snapshots>
@@ -1095,8 +1119,8 @@
 
   <pluginRepositories>
     <pluginRepository>
-      <id>temp-maven-repo</id>
-      <url>https://github.com/coderReview/temp-maven-repo/raw/master</url>
+      <id>tcrepo</id>
+      <url>>http://tc-mvn-repo.s3-website-us-east-1.amazonaws.com/release</url>
       <snapshots>
         <enabled>true</enabled>
         <updatePolicy>always</updatePolicy>
@@ -1106,6 +1130,13 @@
 
   <build>
     <finalName>review</finalName>
+    <extensions>
+      <extension>
+        <groupId>org.kuali.maven.wagons</groupId>
+        <artifactId>maven-s3-wagon</artifactId>
+        <version>1.2.1</version>
+      </extension>
+    </extensions>
     <pluginManagement>
       <plugins>
         <plugin>
