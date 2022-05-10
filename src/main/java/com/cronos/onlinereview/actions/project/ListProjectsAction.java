@@ -7,17 +7,16 @@ import com.cronos.onlinereview.Constants;
 import com.cronos.onlinereview.dataaccess.DeliverableDataAccess;
 import com.cronos.onlinereview.dataaccess.ProjectDataAccess;
 import com.cronos.onlinereview.dataaccess.ProjectPhaseDataAccess;
+import com.cronos.onlinereview.model.api.ListProjectResponse;
 import com.cronos.onlinereview.util.ActionsHelper;
 import com.cronos.onlinereview.util.AuthorizationHelper;
 import com.cronos.onlinereview.util.Comparators;
 import com.cronos.onlinereview.util.ConfigHelper;
-import com.cronos.onlinereview.util.CorrectnessCheckResult;
 import com.cronos.onlinereview.util.EJBLibraryServicesLocator;
 import com.cronos.onlinereview.util.LoggingHelper;
 import com.cronos.onlinereview.util.LookupHelper;
-
+import com.cronos.onlinereview.util.RestHelper;
 import com.opensymphony.xwork2.TextProvider;
-
 import com.topcoder.management.deliverable.Deliverable;
 import com.topcoder.management.deliverable.DeliverableManager;
 import com.topcoder.management.deliverable.Submission;
@@ -31,25 +30,26 @@ import com.topcoder.management.project.ProjectPropertyType;
 import com.topcoder.management.project.ProjectStatus;
 import com.topcoder.management.project.ProjectType;
 import com.topcoder.management.resource.Resource;
-
 import com.topcoder.project.phases.Phase;
 import com.topcoder.project.phases.PhaseStatus;
 import com.topcoder.project.phases.PhaseType;
-
 import com.topcoder.search.builder.SearchBuilderException;
 import com.topcoder.search.builder.filter.AndFilter;
 import com.topcoder.search.builder.filter.Filter;
 import com.topcoder.search.builder.filter.InFilter;
-
 import com.topcoder.util.errorhandling.BaseException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.cronos.onlinereview.util.AuthorizationHelper.getLoggedInUserId;
 
 
 /**
@@ -80,15 +80,65 @@ public class ListProjectsAction extends BaseProjectAction {
     public ListProjectsAction() {
     }
 
+    private String executeApi(int activeTab, String scope) {
+        Set<String> roles = (Set<String>) request.getAttribute("roles");
+        String role = "";
+        if (roles != null) {
+            role = StringUtils.join(roles, ",");
+        }
+        Map<String, String> param = new HashMap<>();
+        param.put("activeTab", String.valueOf(activeTab));
+        param.put("scope", scope);
+        param.put("userId", String.valueOf(getLoggedInUserId(request)));
+        param.put("role", role);
+        ListProjectResponse data = RestHelper.get("http://host.docker.internal:9999/projects", param, ListProjectResponse.class);
+//        Project[][] projects = data.getProjects();
+        Project[][] projects = new Project[0][];
+        String[][] rootCatalogNames = new String[projects.length][];
+        String[][] rootCatalogIcons = new String[projects.length][];
+        for (int i = 0; i < projects.length; i++) {
+            rootCatalogIcons[i] = new String[projects[i].length];
+            rootCatalogNames[i] = new String[projects[i].length];
+            for (int j = 0; j < projects[i].length; j++) {
+                String rootCatalogId = (String) projects[i][j].getProperty("Root Catalog ID");
+                rootCatalogIcons[i][j] = ConfigHelper.getRootCatalogIconNameSm(rootCatalogId);
+                rootCatalogNames[i][j] = getText(ConfigHelper.getRootCatalogAltTextKey(rootCatalogId));
+            }
+        }
+        ProjectCategory[] projectCategories = data.getProjectCategories();
+        String[] categoryIconNames = new String[projectCategories.length];
+        for (int i = 0; i < projectCategories.length; i++) {
+            categoryIconNames[i] = ConfigHelper.getProjectCategoryIconNameSm(projectCategories[i].getName());
+        }
+        // Place all collected data into the request as attributes
+        request.setAttribute("projectTypes", data.getProjectTypes());
+        request.setAttribute("projectCategories", data.getProjectCategories());
+        request.setAttribute("projects", projects);
+        request.setAttribute("phases", data.getPhases());
+        request.setAttribute("phaseEndDates", data.getPhaseEndDates());
+        request.setAttribute("projectEndDates", data.getProjectEndDates());
+        request.setAttribute("typeCounts", data.getTypeCounts());
+        request.setAttribute("categoryCounts", data.getCategoryCounts());
+        request.setAttribute("totalProjectsCount", data.getTotalProjectsCount());
+        request.setAttribute("rootCatalogIcons", rootCatalogIcons);
+        request.setAttribute("rootCatalogNames", rootCatalogNames);
+        request.setAttribute("categoryIconNames", categoryIconNames);
+
+        // If the currently displayed list is a list of "My" Projects, add some more attributes
+        request.setAttribute("isMyProjects", scope.equalsIgnoreCase("my"));
+        request.setAttribute("myRoles", data.getMyRoles());
+        request.setAttribute("myDeliverables", data.getAllMyDeliverables());
+        return SUCCESS;
+    }
+
     /**
      * This method is an implementation of &quot;List Projects&quot; Struts Action defined for this
      * assembly, which is supposed to fetch list of projects from the database and pass it to the
      * JSP page for subsequent presentation to the end user.
      *
      * @return &quot;success&quot; result, which forwards to the /jsp/listProjects.jsp page (as
-     *         defined in struts.xml file).
-     * @throws BaseException
-     *             if any error occurs.
+     * defined in struts.xml file).
+     * @throws BaseException if any error occurs.
      */
     public String execute() throws BaseException {
         // Remove redirect-after-login attribute (if it exists)
@@ -114,8 +164,6 @@ public class ListProjectsAction extends BaseProjectAction {
             return "all";
         }
 
-        // Obtain an instance of Project Manager
-        ProjectManager manager = ActionsHelper.createProjectManager();
         // This variable will specify the index of active tab on the JSP page
         int activeTab;
 
@@ -132,6 +180,12 @@ public class ListProjectsAction extends BaseProjectAction {
         // Pass the index of the active tab into request
         request.setAttribute("projectTabIndex", activeTab);
 
+        if (ActionsHelper.usingApi(request)) {
+            return executeApi(activeTab, scope);
+        }
+
+        // Obtain an instance of Project Manager
+        ProjectManager manager = ActionsHelper.createProjectManager();
         // Get all project types defined in the database (e.g. Assembly, Component, etc.)
         ProjectType[] projectTypes = manager.getAllProjectTypes();
 
@@ -169,7 +223,7 @@ public class ListProjectsAction extends BaseProjectAction {
         // Fetch projects from the database. These projects will require further grouping
         ProjectStatus draftStatus = LookupHelper.getProjectStatus("Draft");
         ProjectStatus activeStatus = LookupHelper.getProjectStatus("Active");
-        long userId = AuthorizationHelper.getLoggedInUserId(request);
+        long userId = getLoggedInUserId(request);
         Project[] ungroupedProjects;
         ProjectDataAccess projectDataAccess = new ProjectDataAccess();
         ProjectStatus[] projectStatuses = manager.getAllProjectStatuses();
@@ -177,15 +231,15 @@ public class ListProjectsAction extends BaseProjectAction {
         if (activeTab != 1) {
             if (activeTab == 4) {
                 ungroupedProjects = projectDataAccess.searchDraftProjects(projectStatuses, projectCategories,
-                                                                          projectInfoTypes);
+                        projectInfoTypes);
             } else {
                 ungroupedProjects = projectDataAccess.searchActiveProjects(projectStatuses, projectCategories,
-                                                                           projectInfoTypes);
+                        projectInfoTypes);
             }
         } else {
             // user projects
             ungroupedProjects = projectDataAccess.searchUserActiveProjects(userId, projectStatuses, projectCategories,
-                                                                           projectInfoTypes);
+                    projectInfoTypes);
         }
 
         // Sort fetched projects. Currently sorting is done by projects' names only, in ascending order
@@ -393,27 +447,25 @@ public class ListProjectsAction extends BaseProjectAction {
     /**
      * This method will return an array of <code>Project</code> with those projects the user can see taking into
      * consideration eligibility constraints.
-     *
+     * <p>
      * The user can see all those "public" (no eligibility constraints) projects plus those non-public projects where
      * he is assigned as a resource.
      *
      * @param ungroupedProjects all project to be displayed
-     * @param projectFilters all project ids to be displayed
-     * @param allMyResources all resources the user has for the projects to be displayed
-     *
+     * @param projectFilters    all project ids to be displayed
+     * @param allMyResources    all resources the user has for the projects to be displayed
      * @return a <code>Project[]</code> with those projects that the user can see.
-     *
      * @throws BaseException if any error occurs during eligibility services call
      */
     private Project[] filterUsingEligibilityConstraints(Project[] ungroupedProjects, List<Long> projectFilters,
-            Resource[] allMyResources) throws BaseException {
+                                                        Resource[] allMyResources) throws BaseException {
         // check which projects have eligibility constraints
         Set<Long> projectsWithEligibilityConstraints;
 
         try {
             projectsWithEligibilityConstraints =
-                EJBLibraryServicesLocator.getContestEligibilityService().haveEligibility(
-                    projectFilters.toArray(new Long[projectFilters.size()]), false);
+                    EJBLibraryServicesLocator.getContestEligibilityService().haveEligibility(
+                            projectFilters.toArray(new Long[projectFilters.size()]), false);
         } catch (Exception e) {
             addActionError(getText(ACTION_ERROR_LIST_PROJECTS));
             throw new BaseException("It was not possible to retrieve eligibility constraints", e);
@@ -451,30 +503,22 @@ public class ListProjectsAction extends BaseProjectAction {
      * deliverables is returned as is, i.e. as one-dimensional array, and will require further
      * grouping.
      *
+     * @param manager   an instance of <code>DeliverableManager</code> class that will be used to
+     *                  perform a search for deliverables.
+     * @param projects  an array of the projects to search the deliverables for.
+     * @param phases    an array of active phases for the projects specified by <code>projects</code>
+     *                  parameter. The deliverables found will only be related to these phases.
+     * @param resources an array of resources to search the deliverables for. Each of the deliverables
+     *                  found will have to be completed by one of the resources from this array.
      * @return an array of outstanding (incomplete) deliverables.
-     * @param manager
-     *            an instance of <code>DeliverableManager</code> class that will be used to
-     *            perform a search for deliverables.
-     * @param projects
-     *            an array of the projects to search the deliverables for.
-     * @param phases
-     *            an array of active phases for the projects specified by <code>projects</code>
-     *            parameter. The deliverables found will only be related to these phases.
-     * @param resources
-     *            an array of resources to search the deliverables for. Each of the deliverables
-     *            found will have to be completed by one of the resources from this array.
-     * @throws IllegalArgumentException
-     *             if any of the parameters are <code>null</code>.
-     * @throws DeliverablePersistenceException
-     *             if there is an error reading the persistence store.
-     * @throws SearchBuilderException
-     *             if there is an error executing the filter.
-     * @throws DeliverableCheckingException
-     *             if there is an error determining whether some Deliverable has been completed or
-     *             not.
+     * @throws IllegalArgumentException        if any of the parameters are <code>null</code>.
+     * @throws DeliverablePersistenceException if there is an error reading the persistence store.
+     * @throws SearchBuilderException          if there is an error executing the filter.
+     * @throws DeliverableCheckingException    if there is an error determining whether some Deliverable has been completed or
+     *                                         not.
      */
     private static Deliverable[] getDeliverables(DeliverableManager manager, Project[][] projects, Phase[][][] phases,
-            Resource[][][] resources)
+                                                 Resource[][][] resources)
             throws DeliverablePersistenceException, SearchBuilderException, DeliverableCheckingException {
         DeliverableDataAccess deliverableDataAccess = new DeliverableDataAccess();
         Map<Long, Map<Long, Long>> deliverableTypes = deliverableDataAccess.getDeliverablesList();
@@ -567,12 +611,10 @@ public class ListProjectsAction extends BaseProjectAction {
      * <code>resources</code> array or no roles have been found, this method returns a string that
      * denotes Public role (usually this string just says &quot;Public&quot;).
      *
-     * @return a human-readable list of resource roles.
      * @param testProvider the text provider to be used
-     * @param resources
-     *            an array of the roles to determine the names of their resource roles.
-     * @throws IllegalArgumentException
-     *             if any of the parameters are <code>null</code>.
+     * @param resources    an array of the roles to determine the names of their resource roles.
+     * @return a human-readable list of resource roles.
+     * @throws IllegalArgumentException if any of the parameters are <code>null</code>.
      */
     private static String getRolesFromResources(TextProvider testProvider, Resource[] resources) {
         // Validate parameters
@@ -611,24 +653,19 @@ public class ListProjectsAction extends BaseProjectAction {
      * any of the arrays passed to this method is <code>null</code> or empty, or no deliverables
      * have been found, this method returns empty string.
      *
-     * @return a human-readable list of deliverables.
      * @param textProvider the text provider to be used
-     * @param deliverables
-     *            an array of deliverables to fetch outstanding deliverables (and their names) from.
-     * @param phases
-     *            an array of phases to look up the deliverables for.
-     * @param resources
-     *            an array of resources to look up the deliverables for.
-     * @param winnerUserId
-     *            User ID of the winning user for the project, if any. If there is no
-     *            winner for the project, this parameter must be <code>null</code>.
-     * @throws IllegalArgumentException
-     *             if parameter <code>messages</code> is <code>null</code>.
-     * @throws BaseException if an unexpected error occurs.
+     * @param deliverables an array of deliverables to fetch outstanding deliverables (and their names) from.
+     * @param phases       an array of phases to look up the deliverables for.
+     * @param resources    an array of resources to look up the deliverables for.
+     * @param winnerUserId User ID of the winning user for the project, if any. If there is no
+     *                     winner for the project, this parameter must be <code>null</code>.
+     * @return a human-readable list of deliverables.
+     * @throws IllegalArgumentException if parameter <code>messages</code> is <code>null</code>.
+     * @throws BaseException            if an unexpected error occurs.
      */
     private static String getMyDeliverablesForPhases(TextProvider textProvider,
-        Deliverable[] deliverables, Phase[] phases, Resource[] resources, Long winnerUserId)
-        throws BaseException {
+                                                     Deliverable[] deliverables, Phase[] phases, Resource[] resources, Long winnerUserId)
+            throws BaseException {
         // Validate parameters
         ActionsHelper.validateParameterNotNull(textProvider, "textProvider");
 
@@ -673,9 +710,9 @@ public class ListProjectsAction extends BaseProjectAction {
 
             // Some additional special checking is need for Specification Submission type of deliverables
             if (Constants.SPECIFICATION_SUBMISSION_DELIVERABLE_NAME.equals(deliverable.getName())) {
-                Submission[] submissions= ActionsHelper.getProjectSubmissions(
-                    phases[0].getProject().getId(), Constants.SPECIFICATION_SUBMISSION_TYPE_NAME,
-                    Constants.ACTIVE_SUBMISSION_STATUS_NAME, false);
+                Submission[] submissions = ActionsHelper.getProjectSubmissions(
+                        phases[0].getProject().getId(), Constants.SPECIFICATION_SUBMISSION_TYPE_NAME,
+                        Constants.ACTIVE_SUBMISSION_STATUS_NAME, false);
                 if (submissions != null && submissions.length > 0 &&
                         submissions[0].getUpload().getOwner() != deliverable.getResource()) {
                     continue;

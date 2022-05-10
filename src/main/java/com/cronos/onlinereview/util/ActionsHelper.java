@@ -42,6 +42,7 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import com.cronos.onlinereview.Constants;
 import com.cronos.onlinereview.dataaccess.ProjectDataAccess;
@@ -130,6 +131,7 @@ import com.topcoder.util.log.Log;
 import com.topcoder.util.log.LogManager;
 import com.topcoder.web.ejb.forums.Forums;
 import com.topcoder.web.ejb.forums.ForumsHome;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * <p>
@@ -3829,5 +3831,17 @@ public class ActionsHelper {
         buf.append(System.getProperty("file.separator"));
         buf.append(parameter);
         return buf.toString();
+    }
+
+    public static boolean usingApi(HttpServletRequest request) {
+        HttpSession session = request.getSession(true);
+        if (session.getAttribute("usingApi") != null) {
+            return true;
+        } else if (StringUtils.isNotEmpty(request.getParameter("usingApi"))) {
+            session.setAttribute("usingApi", true);
+            return true;
+        } else {
+            return false;
+        }
     }
 }
