@@ -92,8 +92,7 @@ public class ListProjectsAction extends BaseProjectAction {
         param.put("userId", String.valueOf(getLoggedInUserId(request)));
         param.put("role", role);
         ListProjectResponse data = RestHelper.get("http://host.docker.internal:9999/projects", param, ListProjectResponse.class);
-//        Project[][] projects = data.getProjects();
-        Project[][] projects = new Project[0][];
+        Project[][] projects = data.getProjects();
         String[][] rootCatalogNames = new String[projects.length][];
         String[][] rootCatalogIcons = new String[projects.length][];
         for (int i = 0; i < projects.length; i++) {
