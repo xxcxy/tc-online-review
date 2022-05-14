@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.cronos.onlinereview.util.AuthorizationHelper.getLoggedInUserId;
+import static com.cronos.onlinereview.util.RestHelper.REST_API_BASE_URL;
 
 
 /**
@@ -91,7 +92,7 @@ public class ListProjectsAction extends BaseProjectAction {
         param.put("scope", scope);
         param.put("userId", String.valueOf(getLoggedInUserId(request)));
         param.put("role", role);
-        ListProjectResponse data = RestHelper.get("http://host.docker.internal:9999/projects", param, ListProjectResponse.class);
+        ListProjectResponse data = RestHelper.get(REST_API_BASE_URL + "/projects", param, ListProjectResponse.class);
         Project[][] projects = data.getProjects();
         String[][] rootCatalogNames = new String[projects.length][];
         String[][] rootCatalogIcons = new String[projects.length][];

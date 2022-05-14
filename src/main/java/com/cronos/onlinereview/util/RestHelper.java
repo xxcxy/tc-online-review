@@ -1,6 +1,8 @@
 package com.cronos.onlinereview.util;
 
+import com.cronos.onlinereview.model.api.EditProjectResponse;
 import com.cronos.onlinereview.model.api.ListProjectResponse;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.topcoder.util.errorhandling.BaseException;
 import org.apache.http.HttpEntity;
@@ -18,7 +20,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class RestHelper {
+    public static final String REST_API_BASE_URL = "http://host.docker.internal:9999";
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    static {
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    }
 
     public static <T> T get(String url, Map<String, String> param, Class<T> clazz) {
         DefaultHttpClient httpClient = new DefaultHttpClient();
@@ -47,8 +54,8 @@ public class RestHelper {
         param.put("activeTab", String.valueOf(1));
         param.put("scope", "my");
         param.put("userId", String.valueOf(132456L));
-        param.put("role", "GlobalManager");
-        ListProjectResponse data = RestHelper.get("http://localhost:9999/projects", param, ListProjectResponse.class);
+        param.put("role", "Global Manager");
+        EditProjectResponse data = RestHelper.get("http://localhost:9999/projects/671", param, EditProjectResponse.class);
         System.out.println(data.toString());
     }
 }

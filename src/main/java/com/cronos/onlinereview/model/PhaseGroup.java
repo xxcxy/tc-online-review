@@ -428,7 +428,7 @@ public class PhaseGroup {
      */
     public void setName(String name) {
         // Validate parameter
-        ActionsHelper.validateParameterNotNull(name, "name");
+//        ActionsHelper.validateParameterNotNull(name, "name");
 
         this.name = name;
     }
@@ -494,7 +494,7 @@ public class PhaseGroup {
      */
     public void setAppFunc(String appFunc) {
         // Validate parameter
-        ActionsHelper.validateParameterNotNull(appFunc, "appFunc");
+//        ActionsHelper.validateParameterNotNull(appFunc, "appFunc");
 
         this.applicationFunction = appFunc;
     }

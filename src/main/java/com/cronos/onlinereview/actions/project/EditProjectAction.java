@@ -3,8 +3,12 @@
  */
 package com.cronos.onlinereview.actions.project;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -12,21 +16,31 @@ import com.cronos.onlinereview.Constants;
 import com.cronos.onlinereview.external.ExternalUser;
 import com.cronos.onlinereview.model.ClientProject;
 import com.cronos.onlinereview.model.CockpitProject;
+import com.cronos.onlinereview.model.api.EditProjectResponse;
+import com.cronos.onlinereview.model.api.ListProjectResponse;
 import com.cronos.onlinereview.util.ActionsHelper;
 import com.cronos.onlinereview.util.AuthorizationHelper;
 import com.cronos.onlinereview.util.Comparators;
+import com.cronos.onlinereview.util.ConfigHelper;
 import com.cronos.onlinereview.util.CorrectnessCheckResult;
 import com.cronos.onlinereview.util.LoggingHelper;
 import com.cronos.onlinereview.util.LookupHelper;
+import com.cronos.onlinereview.util.RestHelper;
 import com.topcoder.management.phase.PhaseManager;
 import com.topcoder.management.project.Prize;
 import com.topcoder.management.project.PrizeType;
 import com.topcoder.management.project.Project;
+import com.topcoder.management.project.ProjectCategory;
 import com.topcoder.management.resource.Resource;
 import com.topcoder.management.resource.ResourceManager;
 import com.topcoder.management.resource.search.ResourceFilterBuilder;
 import com.topcoder.project.phases.Phase;
 import com.topcoder.util.errorhandling.BaseException;
+import org.apache.commons.lang3.StringUtils;
+
+import static com.cronos.onlinereview.util.AuthorizationHelper.getLoggedInUserId;
+import static com.cronos.onlinereview.util.RestHelper.REST_API_BASE_URL;
+import static com.google.common.collect.Lists.newArrayList;
 
 
 /**
@@ -43,6 +57,77 @@ public class EditProjectAction extends BaseProjectAction {
      * Represents the serial version id.
      */
     private static final long serialVersionUID = -2808910800788550966L;
+
+    private String executeApi(String pid) {
+        Set<String> roles = (Set<String>) request.getAttribute("roles");
+        String role = "";
+        if (roles != null) {
+            role = StringUtils.join(roles, ",");
+        }
+        Map<String, String> param = new HashMap<>();
+        param.put("userId", String.valueOf(getLoggedInUserId(request)));
+        param.put("role", role);
+        EditProjectResponse data = RestHelper.get(REST_API_BASE_URL + "/projects/" + pid, param, EditProjectResponse.class);
+
+        // Place all collected data into the request as attributes
+        request.setAttribute("arePhaseDependenciesEditable", data.getArePhaseDependenciesEditable());
+        request.setAttribute("newProject", data.getNewProject());
+        request.setAttribute("isAdmin", data.getAdmin());
+        request.setAttribute("projectStatuses", data.getProjectStatuses());
+        request.setAttribute("projectTypes", data.getProjectTypes());
+        request.setAttribute("projectCategories", data.getProjectCategories());
+        request.setAttribute("project", data.getProject());
+        request.setAttribute("resourceRoles", data.getResourceRoles());
+        request.setAttribute("disabledResourceRoles", data.getDisabledResourceRoles());
+        request.setAttribute("allowedResourceRoles", data.getAllowedResourceRoles());
+        request.setAttribute("phaseTypes", data.getPhaseTypes());
+        request.setAttribute("screeningScorecards", data.getScreeningScorecards());
+        request.setAttribute("reviewScorecards", data.getReviewScorecards());
+        request.setAttribute("approvalScorecards", data.getApprovalScorecards());
+        request.setAttribute("postMortemScorecards", data.getPostMortemScorecards());
+        request.setAttribute("specificationReviewScorecards", data.getSpecificationReviewScorecards());
+        request.setAttribute("checkpointScreeningScorecards", data.getCheckpointScreeningScorecards());
+        request.setAttribute("checkpointReviewScorecards", data.getCheckpointReviewScorecards());
+        request.setAttribute("iterativeReviewScorecards", data.getIterativeReviewScorecards());
+        request.setAttribute("defaultScorecards", data.getDefaultScorecards());
+        request.setAttribute("phaseTemplateNames", data.getPhaseTemplateNames());
+        request.setAttribute("trueSubmitters", data.getTrueSubmitters());
+        request.setAttribute("trueReviewers", data.getTrueReviewers());
+        request.setAttribute("resourcePaid", data.getResourcePaid());
+        request.setAttribute("phaseGroupIndexes", data.getPhaseGroupIndexes());
+        request.setAttribute("phaseGroups", data.getPhaseGroups());
+        request.setAttribute("activeTabIdx", data.getActiveTabIdx());
+        request.setAttribute("isManager", data.getManager());
+        request.setAttribute("isAllowedToPerformScreening", data.getAllowedToPerformScreening());
+        request.setAttribute("isAllowedToPerformCheckpointScreening", data.getAllowedToPerformCheckpointScreening());
+        request.setAttribute("isAllowedToPerformCheckpointReview", data.getAllowedToPerformCheckpointReview());
+        request.setAttribute("isAllowedToViewScreening", data.getAllowedToViewScreening());
+        request.setAttribute("isAllowedToViewCheckpointScreening", data.getAllowedToViewCheckpointScreening());
+        request.setAttribute("isAllowedToViewCheckpointReview", data.getAllowedToViewCheckpointReview());
+        request.setAttribute("isAllowedToUploadTC", data.getAllowedToUploadTC());
+        request.setAttribute("isAllowedToPerformAggregation", data.getAllowedToPerformAggregation());
+        request.setAttribute("isAllowedToPerformAggregationReview", data.getAllowedToPerformAggregationReview());
+        request.setAttribute("isAllowedToUploadFF", data.getAllowedToUploadFF());
+        request.setAttribute("isAllowedToPerformFinalReview", data.getAllowedToPerformFinalReview());
+        request.setAttribute("canEditContestPrize", data.getCanEditContestPrize());
+        request.setAttribute("isAllowedToPerformApproval", data.getAllowedToPerformApproval());
+        request.setAttribute("isAllowedToPerformPortMortemReview", data.getAllowedToPerformPortMortemReview());
+        request.setAttribute("canEditCheckpointPrize", data.getCanEditCheckpointPrize());
+        request.setAttribute("allowCockpitProjectEdit", data.getAllowCockpitProjectEdit());
+        request.setAttribute("allowBillingEdit", data.getAllowBillingEdit());
+        request.setAttribute("allPayments", data.getAllPayments());
+        request.setAttribute("billingProjects", data.getBillingProjects());
+        request.setAttribute("cockpitProjects", data.getCockpitProjects());
+        for (Map.Entry<String, String> kv: data.getModelValues().entrySet()) {
+            setModelValue(kv.getKey(), kv.getValue());
+        }
+        for (Map.Entry<String, ArrayList<String>> kv: data.getModelArrayValues().entrySet()) {
+            for (int i = 0; i < kv.getValue().size(); i++) {
+                setModelValue(kv.getKey(), i + 1, kv.getValue().get(i));
+            }
+        }
+        return Constants.SUCCESS_FORWARD_NAME;
+    }
 
     /**
      * This method is an implementation of &quot;Edit Project&quot; Struts Action defined for this
@@ -68,6 +153,10 @@ public class EditProjectAction extends BaseProjectAction {
         // If any error has occurred, return action forward contained in the result bean
         if (!verification.isSuccessful()) {
             return verification.getResult();
+        }
+
+        if (ActionsHelper.usingApi(request)) {
+            return executeApi(request.getParameter("pid"));
         }
 
         setEditProjectFormData(request, verification);
@@ -264,6 +353,41 @@ public class EditProjectAction extends BaseProjectAction {
                 getModel().set(formProperty, Integer.valueOf(value));
             } else if (type == Double.class) {
                 getModel().set(formProperty, Double.valueOf(value));
+            }
+        }
+
+    }
+
+    private void setModelValue(String key, String value) {
+        Class type = getModel().getDynaClass().getDynaProperty(key).getType();
+        if (value != null) {
+            if (type == String.class) {
+                getModel().set(key, value);
+            } else if (type == Boolean.class) {
+                getModel().set(key, Boolean.valueOf(value.equalsIgnoreCase("true")));
+            } else if (type == Long.class) {
+                getModel().set(key, Long.valueOf(value));
+            } else if (type == Integer.class) {
+                getModel().set(key, Integer.valueOf(value));
+            } else if (type == Double.class) {
+                getModel().set(key, Double.valueOf(value));
+            }
+        }
+    }
+
+    private void setModelValue(String key, int index, String value) {
+        Class type = getModel().getDynaClass().getDynaProperty(key).getContentType();
+        if (value != null) {
+            if (type == String.class) {
+                getModel().set(key, index, value);
+            } else if (type == Boolean.class) {
+                getModel().set(key, index, Boolean.valueOf(value.equalsIgnoreCase("true")));
+            } else if (type == Long.class) {
+                getModel().set(key, index, Long.valueOf(value));
+            } else if (type == Integer.class) {
+                getModel().set(key, index, Integer.valueOf(value));
+            } else if (type == Double.class) {
+                getModel().set(key, index, Double.valueOf(value));
             }
         }
     }
